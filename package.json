@@ -1,7 +1,7 @@
 {
   "name": "@kawaz/provide-defer",
   "license": "MIT",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "type": "module",
   "main": "dist/index.js",
   "module": "src/index.ts",
@@ -15,6 +15,7 @@
   "publishConfig": {
     "access": "public"
   },
+  "keywords": ["promise", "async", "await", "defer", "wait", "later", "provideDefer"],
   "author": "kawaz",
   "repository": {
     "type": "git",
