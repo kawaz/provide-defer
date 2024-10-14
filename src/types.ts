@@ -31,7 +31,7 @@ export type DeferFunction = (deferrable: Deferrable) => void
  * @param defer - A function to schedule deferred operations.
  * @returns A promise that resolves to a value of type T.
  */
-export type DeferrableFunction<T> = (defer: DeferFunction) => Promise<T>
+export type DeferrableFunction<T> = (defer: DeferFunction) => T | Promise<T>
 
 /**
  * The main provideDefer function type.
