@@ -45,8 +45,8 @@ export const provideDefer: ProvideDeferFunction = async <T>(func: DeferrableFunc
       deferrables.map(async (d) => {
         try {
           return typeof d === 'function' ? d() : d
-        } catch (error) {
-          console.error('Error in deferred operation:', error)
+        } catch (err) {
+          return Promise.reject(err)
         }
       }),
     )
