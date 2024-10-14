@@ -1,4 +1,4 @@
-# provide-defer
+# @kawaz/provide-defer
 
 `provide-defer` is a TypeScript utility that enhances asynchronous functions with defer capability. It allows you to schedule operations to be performed after the main function completes, regardless of whether it resolves or rejects.
 
