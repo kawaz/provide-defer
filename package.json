@@ -1,14 +1,24 @@
 {
   "name": "@kawaz/provide-defer",
   "license": "MIT",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "main": "dist/index.js",
   "module": "src/index.ts",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "build": "bun run build.ts",
+    "build": "bunx tsc",
+    "test": "bunx run test",
     "lint": "bunx @biomejs/biome check . --write",
-    "prepack": "bun run build"
+    "prepublishOnly": "bun run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "kawaz",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/r-knm/github-packages-npm-registry-sample"
   },
   "devDependencies": {
     "@types/bun": "latest"
