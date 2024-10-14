@@ -60,6 +60,10 @@ type DeferFunction = (deferrable: Deferrable) => void;
 
 - `deferrable`: The operation to be deferred. Can be a Promise or a function (sync or async).
 
+```typescript
+type Deferrable = Promise<unknown> | (() => unknown) | (() => Promise<unknown>)
+```
+
 #### Behavior
 
 - When a Promise is passed:
