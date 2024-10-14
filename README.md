@@ -47,7 +47,7 @@ const result = await enhancedFunc();
 
 Enhances an asynchronous function with defer capability.
 
-- `func`: The async function to be enhanced. It receives a `defer` function as its parameter.
+- `func`: The function to be enhanced. It receives a `defer` function as its parameter.
 - Returns: A promise that resolves with the result of the original function.
 
 ### `DeferFunction`
