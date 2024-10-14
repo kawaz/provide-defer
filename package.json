@@ -1,0 +1,19 @@
+{
+  "name": "@kawaz/provide-defer",
+  "license": "MIT",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "src/index.ts",
+  "scripts": {
+    "build": "bun run build.ts",
+    "lint": "bunx @biomejs/biome check . --write",
+    "prepack": "bun run build"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
