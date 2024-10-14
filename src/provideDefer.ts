@@ -34,16 +34,15 @@ import type { Deferrable, DeferrableFunction, ProvideDeferFunction } from './typ
  * @see DeferFunction for more details on the behavior of deferred operations.
  */
 export const provideDefer: ProvideDeferFunction = async <T>(func: DeferrableFunction<T>) => {
-  const defers: Deferrable[] = []
+  const deferrables: Deferrable[] = []
   const defer = (deferrable: Deferrable) => {
-    defers.push(deferrable)
+    deferrables.push(deferrable)
   }
-
   try {
-    return await func(defer)
+    return func(defer)
   } finally {
     await Promise.all(
-      defers.map(async (d) => {
+      deferrables.map(async (d) => {
         try {
           return typeof d === 'function' ? d() : d
         } catch (error) {
