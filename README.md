@@ -7,21 +7,21 @@
 You can install `provide-defer` using npm:
 
 ```bash
-npm install provide-defer
+npm install @kawaz/provide-defer
 ```
 
 Or using yarn:
 
 ```bash
-yarn add provide-defer
+yarn add @kawaz/provide-defer
 ```
 
 ## Usage
 
-Here's a basic example of how to use `provide-defer`:
+Here's a basic example of how to use `@kawaz/provide-defer`:
 
 ```typescript
-import { provideDefer } from 'provide-defer';
+import { provideDefer } from '@kawaz/provide-defer';
 
 const enhancedFunc = provideDefer(async (defer) => {
   const result = await someAsyncOperation();
