@@ -9,7 +9,8 @@
   "scripts": {
     "build": "bun exec 'rm -rf dist' && bunx tsc",
     "test": "bunx run test",
-    "lint": "bunx @biomejs/biome check . --write"
+    "lint": "bunx @biomejs/biome check . --write",
+    "prepublishOnly": "bun run lint && bun run test && bun build"
   },
   "publishConfig": {
     "access": "public"
