@@ -27,8 +27,5 @@
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
-  "files": [
-    "dist",
-    "!dist/**/*.test.*"
-  ]
+  "files": ["dist", "!dist/**/*.test.*"]
 }
