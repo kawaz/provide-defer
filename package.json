@@ -1,7 +1,7 @@
 {
   "name": "@kawaz/provide-defer",
   "license": "MIT",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "type": "module",
   "main": "dist/index.js",
   "module": "src/index.ts",
@@ -26,5 +26,9 @@
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
-  }
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.test.*"
+  ]
 }
