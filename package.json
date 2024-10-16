@@ -8,9 +8,9 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "bun exec 'rm -rf dist' && bunx tsc",
-    "test": "bunx run test",
+    "test": "bun test",
     "lint": "bunx @biomejs/biome check . --write",
-    "prepublishOnly": "bun run lint && bun run test && bun build"
+    "prepublishOnly": "bun run lint && bun run test && bun run build"
   },
   "publishConfig": {
     "access": "public"
