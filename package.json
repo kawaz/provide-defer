@@ -1,16 +1,15 @@
 {
   "name": "@kawaz/provide-defer",
   "license": "MIT",
-  "version": "1.0.10",
+  "version": "1.1.0",
   "type": "module",
   "main": "dist/index.js",
   "module": "src/index.ts",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "bunx tsc",
+    "build": "bun exec 'rm -rf dist' && bunx tsc",
     "test": "bunx run test",
-    "lint": "bunx @biomejs/biome check . --write",
-    "prepublishOnly": "bun run build"
+    "lint": "bunx @biomejs/biome check . --write"
   },
   "publishConfig": {
     "access": "public"

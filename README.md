@@ -1,96 +1,128 @@
 # @kawaz/provide-defer
 
-`provide-defer` is a TypeScript utility that enhances asynchronous functions with defer capability. It allows you to schedule operations to be performed after the main function completes, regardless of whether it resolves or rejects.
+`@kawaz/provide-defer` is a TypeScript utility package that provides a mechanism for deferring the execution of functions or Promises, similar to Go's `defer` statement. It allows you to schedule cleanup or finalization code to run after the main function has completed, regardless of whether it completes normally or throws an error.
+
+## Features
+
+- Defer execution of functions or Promises
+- Execute deferred functions in reverse order (LIFO)
+- Options for error handling and asynchronous execution
+- Aggregates errors from main and deferred functions
+- TypeScript support with generic typing
 
 ## Installation
-
-You can install `provide-defer` using npm:
 
 ```bash
 npm install @kawaz/provide-defer
 ```
 
-Or using yarn:
-
-```bash
-yarn add @kawaz/provide-defer
-```
-
 ## Usage
 
-Here's a basic example of how to use `@kawaz/provide-defer`:
+Here's a basic example of how to use `provideDefer`:
 
 ```typescript
 import { provideDefer } from '@kawaz/provide-defer';
 
-const enhancedFunc = provideDefer(async (defer) => {
-  const result = await someAsyncOperation();
+const result = await provideDefer(async (defer) => {
+  const resource = await acquireResource();
+  defer(() => releaseResource(resource));
 
-  // This will run after the main function completes
-  defer(() => {
-    console.log('Cleanup operation');
-  });
-
-  // The main function will wait for this Promise to resolve
-  defer(someAsyncCleanupOperation());
-
-  return result;
+  // Use the resource...
+  return someOperation(resource);
 });
-
-// Use the enhanced function
-const result = await enhancedFunc();
 ```
 
 ## API
 
-### `provideDefer<T>(func: (defer: DeferFunction) => Promise<T>): Promise<T>`
+### `provideDefer<T>(fn: (defer: DeferFunction) => T | Promise<T>): Promise<T>`
 
-Enhances an asynchronous function with defer capability.
-
-- `func`: The function to be enhanced. It receives a `defer` function as its parameter.
-- Returns: A promise that resolves with the result of the original function.
+- `fn`: The main function to execute. It receives a `defer` function as an argument.
+- Returns a Promise that resolves with the result of the main function.
 
 ### `DeferFunction`
 
-A function used to schedule operations to be performed after the main function completes.
-
 ```typescript
-type DeferFunction = (deferrable: Deferrable) => void;
+type DeferFunction = (fn: DeferredFunctionOrPromise, options?: DeferOptions) => void
 ```
 
-- `deferrable`: The operation to be deferred. Can be a Promise or a function (sync or async).
+- `fn`: The function or Promise to be deferred.
+- `options`: Optional settings to control the behavior of the deferred function.
+
+### `DeferOptions`
 
 ```typescript
-type Deferrable = Promise<unknown> | (() => unknown) | (() => Promise<unknown>)
+type DeferOptions = {
+  noThrow?: boolean;
+  noWait?: boolean;
+}
 ```
 
-#### Behavior
+- `noThrow`: If true, errors from this deferred function will be ignored.
+- `noWait`: If true, the deferred function will be executed immediately without waiting for its completion.
 
-- When a Promise is passed:
-  - The resolution of the main function will wait for this Promise to settle.
-  - The main function resolves only after all deferred Promises have settled.
+## Error Handling
 
-- When a function is passed:
-  - The function will be executed after the main function completes.
-  - If it's an async function, the main function will resolve after its Promise is settled.
-  - If it's a sync function, it will be executed synchronously after the main function.
+If any errors occur in the deferred functions (and `noThrow` is not set), or if the main function throws an error, `provideDefer` will throw an `AggregateError` containing all the errors.
 
-In both cases, any errors in deferred operations are caught and logged, but do not affect the main function's resolution.
+## Examples
 
-## Contributing
+### Basic Usage
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+```typescript
+import { provideDefer } from '@kawaz/provide-defer';
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+const result = await provideDefer((defer) => {
+  defer(() => console.log('This will be executed last'));
+  defer(() => console.log('This will be executed second'));
+  console.log('This will be executed first');
+  return 'Main function result';
+});
+
+console.log(result); // Outputs: "Main function result"
+```
+
+### Error Handling
+
+```typescript
+import { provideDefer } from '@kawaz/provide-defer';
+
+try {
+  await provideDefer((defer) => {
+    defer(() => { throw new Error('Deferred error'); });
+    throw new Error('Main error');
+  });
+} catch (error) {
+  if (error instanceof AggregateError) {
+    console.log(error.message); // Outputs: "Main error and 1 deferred error(s)"
+    console.log(error.errors); // Array of all errors
+  }
+}
+```
+
+### Using `noThrow` and `noWait` Options
+
+```typescript
+import { provideDefer } from '@kawaz/provide-defer';
+
+await provideDefer((defer) => {
+  defer(() => { throw new Error('This error will be ignored'); }, { noThrow: true });
+  defer(() => new Promise(resolve => setTimeout(resolve, 1000)), { noWait: true });
+  return 'Main function result';
+});
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT
 
 ## Author
 
-[Yoshiaki Kawazu](https://github.com/kawaz)
+Yoshiaki Kawazu
+
+## Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check [issues page](https://github.com/kawaz/provide-defer/issues).
+
+## Support
+
+If you like this project, please consider supporting it by giving a ⭐️ on GitHub!
