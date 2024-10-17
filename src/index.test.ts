@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { $ } from 'bun'
 import { provideDefer } from './index'
 
 describe('provideDefer', () => {
@@ -114,6 +115,100 @@ describe('provideDefer', () => {
       })
       expect(result).toBe('Async main function result')
       expect(deferredResults).toEqual(['Deferred function executed'])
+    })
+  })
+
+  describe('with {alsoOnExit:true}', () => {
+    it('executes normally when run successfully', async () => {
+      const childMain = () =>
+        import('./index')
+          .then(({ provideDefer }) =>
+            provideDefer((defer) => {
+              console.log('main start')
+              defer(() => console.log('Cleanup 1'))
+              defer(() => console.log('Cleanup 2 alsoOnExit'), { alsoOnExit: true })
+              defer(() => console.log('Cleanup 3'))
+              console.log('main end')
+              return 'main result'
+            }),
+          )
+          .then((result) => console.log(result))
+      const mainCode = `await (${childMain.toString()})()\n`
+      const result = await $`bun run - < ${new Response(mainCode)}`.cwd(__dirname).text()
+      expect(result).toContain('main start')
+      expect(result).toContain('main end')
+      expect(result).toContain('Cleanup 3')
+      expect(result).toContain('Cleanup 2 alsoOnExit')
+      expect(result).toContain('Cleanup 1')
+      expect(result).toContain('main result')
+    })
+
+    describe('When process.exit(0) is called before the main function completes', () => {
+      it('SYNC functions are executed without issues', async () => {
+        const childMain = () =>
+          import('./index')
+            .then(({ provideDefer }) =>
+              provideDefer((defer) => {
+                console.log('main start')
+                defer(() => console.log('Cleanup 1'))
+                defer(() => console.log('Cleanup 2 alsoOnExit'), { alsoOnExit: true })
+                process.exit(1)
+                defer(() => console.log('Cleanup 3'))
+                console.log('main end')
+                return 'main result'
+              }),
+            )
+            .then((result) => console.log(result))
+            .catch((err) => console.log(err))
+        const mainCode = `await (${childMain.toString()})()\n`
+        const result = await $`bun run - < ${new Response(mainCode)}`
+          .cwd(__dirname)
+          .nothrow()
+          .text()
+        expect(result).toContain('main start')
+        expect(result).toContain('Cleanup 2 alsoOnExit')
+        expect(result).not.toContain('Cleanup 1')
+        expect(result).not.toContain('Cleanup 3')
+        expect(result).not.toContain('main end')
+        expect(result).not.toContain('main result')
+      })
+
+      it('ASYNC functions may not be fully executed', async () => {
+        const childMain = () =>
+          import('./index')
+            .then(({ provideDefer }) =>
+              provideDefer((defer) => {
+                console.log('main start')
+                defer(() => console.log('Cleanup 1'))
+                defer(
+                  async () => {
+                    console.log('Cleanup 2 (before await)')
+                    await 0
+                    console.log('Cleanup 2 (after await)')
+                  },
+                  { alsoOnExit: true },
+                )
+                process.exit(1)
+                defer(() => console.log('Cleanup 3'))
+                console.log('main end')
+                return 'main result'
+              }),
+            )
+            .then((result) => console.log(result))
+            .catch((err) => console.log(err))
+        const mainCode = `await (${childMain.toString()})()\n`
+        const result = await $`bun run - < ${new Response(mainCode)}`
+          .cwd(__dirname)
+          .nothrow()
+          .text()
+        expect(result).toContain('main start')
+        expect(result).toContain('Cleanup 2 (before await)')
+        expect(result).not.toContain('Cleanup 2 (after await)') // THIS IS IMPORTANT
+        expect(result).not.toContain('Cleanup 1')
+        expect(result).not.toContain('Cleanup 3')
+        expect(result).not.toContain('main end')
+        expect(result).not.toContain('main result')
+      })
     })
   })
 })

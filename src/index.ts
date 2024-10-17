@@ -1,13 +1,9 @@
-/**
- * Represents a function that can be either synchronous or asynchronous,
- * returning a value of type T or a Promise of T.
- */
-export type SyncOrAsyncFunction<T> = (...args: unknown[]) => T | Promise<T>
-
-/**
- * Represents either a synchronous/asynchronous function or a Promise.
- */
-export type DeferredFunctionOrPromise = SyncOrAsyncFunction<unknown> | Promise<unknown>
+// biome-ignore lint/suspicious/noExplicitAny: For maximum flexibility
+export type SyncFunction<T> = (...args: any[]) => T
+// biome-ignore lint/suspicious/noExplicitAny: For maximum flexibility
+export type AsyncFunction<T> = (...args: any[]) => Promise<T>
+export type SyncOrAsyncFunction<T> = SyncFunction<T> | AsyncFunction<T>
+export type FunctionOrPromise<T> = SyncOrAsyncFunction<T> | AsyncFunction<T> | Promise<T>
 
 /**
  * Options for controlling the behavior of deferred functions.
@@ -17,6 +13,17 @@ export type DeferOptions = {
   noThrow?: boolean
   /** If true, the result of this deferred function or promise will not be awaited. */
   noWait?: boolean
+  /**
+   * If true, the delayed function is guaranteed to run when the main function completes
+   * or even if the process attempts to terminate before it does.
+   * This ensures critical operations are performed regardless of how the process ends.
+   *
+   * @remarks
+   * When using this option, it's strongly recommended to use only synchronous functions.
+   * Asynchronous functions may not complete execution if the process exits abruptly.
+   * Only the synchronous part of an async function (before the first `await`) is guaranteed to run.
+   */
+  alsoOnExit?: boolean
 }
 
 /**
@@ -24,7 +31,10 @@ export type DeferOptions = {
  * @param fn The function or Promise to be deferred.
  * @param options Optional settings to control the behavior of the deferred function.
  */
-export type DeferFunction = (fn: DeferredFunctionOrPromise, options?: DeferOptions) => void
+export type DeferFunction = {
+  (fn: FunctionOrPromise<unknown>, options?: DeferOptions): void
+  (fn: SyncFunction<unknown>, options: DeferOptions & { alsoOnExit: true }): void
+}
 
 /**
  * Provides a mechanism for deferring the execution of functions or Promises, similar to Go's defer statement.
@@ -45,20 +55,39 @@ export type DeferFunction = (fn: DeferredFunctionOrPromise, options?: DeferOptio
  */
 export const provideDefer = async <T>(fn: (defer: DeferFunction) => T | Promise<T>): Promise<T> => {
   type DeferredItem = {
-    deferred: DeferredFunctionOrPromise
+    deferred: FunctionOrPromise<unknown>
     options?: DeferOptions
   }
   const deferreds: DeferredItem[] = []
-  const defer = (d: DeferredFunctionOrPromise, options?: DeferOptions) => {
-    deferreds.push({ deferred: d, options })
+  const defer = (d: FunctionOrPromise<unknown>, options?: DeferOptions) => {
+    if (options?.alsoOnExit) {
+      let called = false
+      const cb = () => {
+        if (called) {
+          return
+        }
+        called = true
+        process.removeListener('beforeExit', cb)
+        process.removeListener('exit', cb)
+        deferredToPromise(d)
+      }
+      process.on('exit', cb)
+      process.on('beforeExit', cb)
+      deferreds.push({ deferred: cb, options })
+    } else {
+      deferreds.push({ deferred: d, options })
+    }
   }
+  // メイン関数を実行して結果を保持する
   const mainResult: { value: T | null; error: unknown; hasError: boolean } = {
     value: null,
-    error: undefined,
+    error: null,
     hasError: false,
   }
   try {
-    mainResult.value = await executeFunctionToPromise(() => fn(defer))
+    const runMain: SyncOrAsyncFunction<T> = async () => await fn(defer)
+
+    mainResult.value = await executeFunctionToPromise<T>(runMain)
   } catch (err) {
     mainResult.error = err
     mainResult.hasError = true
@@ -80,6 +109,7 @@ export const provideDefer = async <T>(fn: (defer: DeferFunction) => T | Promise<
       }
     }
   }
+  // defer で渡された関数にエラーが含まれる場合は AggregateError を返す
   if (errors.length > 0) {
     if (mainResult.hasError) {
       const mainError = mainResult.error
@@ -91,6 +121,7 @@ export const provideDefer = async <T>(fn: (defer: DeferFunction) => T | Promise<
     }
     throw new AggregateError(errors, `${errors.length} deferred error(s).`)
   }
+  // メイン関数の結果をそのまま返す
   if (mainResult.hasError) {
     throw mainResult.error
   }
@@ -98,12 +129,11 @@ export const provideDefer = async <T>(fn: (defer: DeferFunction) => T | Promise<
 }
 
 /**
- * Converts a DeferredFunctionOrPromise to a Promise.
- *
+ * Converts a deferred function or Promise to a Promise.
  * @param deferred The function or Promise to be converted.
  * @returns A Promise that resolves with the result of the deferred function or Promise.
  */
-const deferredToPromise = (deferred: DeferredFunctionOrPromise): Promise<unknown> => {
+const deferredToPromise = (deferred: FunctionOrPromise<unknown>): Promise<unknown> => {
   if (typeof deferred === 'function') {
     return executeFunctionToPromise(deferred)
   }
@@ -113,16 +143,10 @@ const deferredToPromise = (deferred: DeferredFunctionOrPromise): Promise<unknown
 /**
  * Executes a function and always returns a Promise, regardless of whether
  * the input function is synchronous or asynchronous.
- *
- * @template T The type of the value that the function returns (or resolves to).
+ * @template T The type of the value that the function returns or the Promise resolves to.
  * @param fn The function to execute, which can be synchronous or asynchronous.
- * @returns A Promise that resolves with the return value of the function,
- *          or rejects if the function throws an error.
+ * @returns A Promise that resolves with the return value of the function.
  */
-const executeFunctionToPromise = <T>(fn: SyncOrAsyncFunction<T>): Promise<T> => {
-  try {
-    return Promise.resolve(fn())
-  } catch (err) {
-    return Promise.reject(err)
-  }
+const executeFunctionToPromise = async <T>(fn: SyncOrAsyncFunction<T>): Promise<T> => {
+  return await fn()
 }
