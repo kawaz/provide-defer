@@ -9,6 +9,7 @@
 - Options for error handling and asynchronous execution
 - Aggregates errors from main and deferred functions
 - TypeScript support with generic typing
+- Support for critical cleanup operations with `alsoOnExit` option
 
 ## Installation
 
@@ -42,7 +43,10 @@ const result = await provideDefer(async (defer) => {
 ### `DeferFunction`
 
 ```typescript
-type DeferFunction = (fn: DeferredFunctionOrPromise, options?: DeferOptions) => void
+type DeferFunction = {
+  (fn: FunctionOrPromise<unknown>, options?: DeferOptions): void
+  (fn: SyncFunction<unknown>, options: DeferOptions & { alsoOnExit: true }): void
+}
 ```
 
 - `fn`: The function or Promise to be deferred.
@@ -54,11 +58,13 @@ type DeferFunction = (fn: DeferredFunctionOrPromise, options?: DeferOptions) => 
 type DeferOptions = {
   noThrow?: boolean;
   noWait?: boolean;
+  alsoOnExit?: boolean;
 }
 ```
 
 - `noThrow`: If true, errors from this deferred function will be ignored.
-- `noWait`: If true, the deferred function will be executed immediately without waiting for its completion.
+- `noWait`: If true, the execution of the deferred function will start as scheduled, but provideDefer will not wait for its completion before resolving. This allows the deferred function to run in the background.
+- `alsoOnExit`: If true, the deferred function is guaranteed to run even if the process exits abruptly. Only synchronous functions are fully supported with this option.
 
 ## Error Handling
 
@@ -106,10 +112,42 @@ import { provideDefer } from '@kawaz/provide-defer';
 
 await provideDefer((defer) => {
   defer(() => { throw new Error('This error will be ignored'); }, { noThrow: true });
-  defer(() => new Promise(resolve => setTimeout(resolve, 1000)), { noWait: true });
+
+  defer(async () => {
+    console.log('Start of long-running operation');
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    console.log('End of long-running operation');
+  }, { noWait: true });
+
+  console.log('Main function continues immediately');
+  return 'Main function result';
+});
+
+console.log('provideDefer resolved');
+
+// Output:
+// Start of long-running operation
+// Main function continues immediately
+// provideDefer resolved
+// End of long-running operation (after about 5 seconds)
+```
+
+### Using `alsoOnExit` Option
+
+```typescript
+import { provideDefer } from '@kawaz/provide-defer';
+
+await provideDefer((defer) => {
+  defer(() => console.log('This will be executed on normal exit or abrupt process termination'), { alsoOnExit: true });
+  // Note: Only synchronous functions are guaranteed to complete when used with alsoOnExit
   return 'Main function result';
 });
 ```
+
+## Important Notes
+
+- When using the `alsoOnExit` option, it's strongly recommended to use only synchronous functions. Asynchronous functions may not complete execution if the process exits abruptly.
+- The `alsoOnExit` option ensures that the deferred function runs even in cases of abrupt process termination, making it suitable for critical cleanup operations.
 
 ## License
 
