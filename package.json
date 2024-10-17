@@ -8,7 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "bun exec 'rm -rf dist' && bunx tsc",
-    "test": "bun test",
+    "test": "bun test --coverage",
     "lint": "bunx @biomejs/biome check . --write",
     "prepublishOnly": "bun run lint && bun run test && bun run build"
   },
