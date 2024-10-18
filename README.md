@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/@kawaz%2Fprovide-defer.svg)](https://badge.fury.io/js/@kawaz%2Fprovide-defer)
+
 # @kawaz/provide-defer
 
 `@kawaz/provide-defer` is a TypeScript utility package that provides a mechanism for deferring the execution of functions or Promises, similar to Go's `defer` statement. It allows you to schedule cleanup or finalization code to run after the main function has completed, regardless of whether it completes normally or throws an error.
