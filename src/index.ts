@@ -31,10 +31,8 @@ export type DeferOptions = {
  * @param fn The function or Promise to be deferred.
  * @param options Optional settings to control the behavior of the deferred function.
  */
-export type DeferFunction = {
-  (fn: FunctionOrPromise<unknown>, options?: DeferOptions): void
-  (fn: SyncFunction<unknown>, options: DeferOptions & { alsoOnExit: true }): void
-}
+export type DeferFunction = (fn: FunctionOrPromise<unknown>, options?: DeferOptions) => void
+
 
 /**
  * Provides a mechanism for deferring the execution of functions or Promises, similar to Go's defer statement.
