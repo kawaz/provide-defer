@@ -1,11 +1,21 @@
 {
   "name": "@kawaz/provide-defer",
-  "license": "MIT",
+  "description": "A utility library that provides a mechanism for deferring the execution of functions or Promises, similar to Go's defer statement.",
   "version": "1.2.2",
+  "author": "kawaz",
+  "license": "MIT",
+
   "type": "module",
   "main": "dist/index.js",
   "module": "src/index.ts",
   "types": "dist/index.d.ts",
+  "publishConfig": { "access": "public" },
+  "files": ["dist", "!dist/**/*.test.*", "!dist/**/*.spec.*"],
+  "keywords": ["promise", "async", "await", "defer", "wait", "later", "provideDefer"],
+  "repository": { "type": "git", "url": "git://github.com/kawaz/provide-defer" },
+  "homepage": "https://github.com/kawaz/provide-defer#readme",
+  "bugs": { "url": "https://github.com/kawaz/provide-defer/issues" },
+
   "scripts": {
     "build": "bun exec 'rm -rf dist' && bunx tsc",
     "test": "bun test --coverage",
@@ -13,20 +23,9 @@
     "coverage": "bun exec 'bunx typescript-coverage-report 2>/dev/null'",
     "prepublishOnly": "bun run lint && bun run test && bun run build"
   },
-  "publishConfig": {
-    "access": "public"
-  },
-  "keywords": ["promise", "async", "await", "defer", "wait", "later", "provideDefer"],
-  "author": "kawaz",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/kawaz/provide-defer"
-  },
+
   "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
+    "@types/bun": "latest",
     "typescript": "^5.6.3"
-  },
-  "files": ["dist", "!dist/**/*.test.*", "!dist/**/*.spec.*"]
+  }
 }
