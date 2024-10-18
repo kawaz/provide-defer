@@ -61,18 +61,11 @@ export const provideDefer = async <T>(fn: (defer: DeferFunction) => T | Promise<
   const deferreds: DeferredItem[] = []
   const defer = (d: FunctionOrPromise<unknown>, options?: DeferOptions) => {
     if (options?.alsoOnExit) {
-      let called = false
       const cb = () => {
-        if (called) {
-          return
-        }
-        called = true
-        process.removeListener('beforeExit', cb)
         process.removeListener('exit', cb)
-        deferredToPromise(d)
+        return deferredToPromise(d)
       }
       process.on('exit', cb)
-      process.on('beforeExit', cb)
       deferreds.push({ deferred: cb, options })
     } else {
       deferreds.push({ deferred: d, options })
