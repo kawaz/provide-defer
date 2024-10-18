@@ -110,8 +110,9 @@ export const provideDefer = async <T>(fn: (defer: DeferFunction) => T | Promise<
     if (mainResult.hasError) {
       const mainError = mainResult.error
       const mainErrorMessage = mainError instanceof Error ? mainError.message : String(mainError)
+      const mergedErrors = [mainError, ...errors]
       throw new AggregateError(
-        [mainError, ...errors],
+        mergedErrors,
         `${mainErrorMessage} and ${errors.length} deferred error(s).`,
       )
     }
