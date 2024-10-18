@@ -11,17 +11,18 @@ export type FunctionOrPromise<T> = SyncOrAsyncFunction<T> | AsyncFunction<T> | P
 export type DeferOptions = {
   /** If true, errors from this deferred function or promise will be ignored. */
   noThrow?: boolean
-  /** If true, the result of this deferred function or promise will not be awaited. */
+  /** If true, the execution of the deferred function will start as scheduled, but provideDefer will not wait for its completion before resolving. */
   noWait?: boolean
   /**
-   * If true, the delayed function is guaranteed to run when the main function completes
-   * or even if the process attempts to terminate before it does.
-   * This ensures critical operations are performed regardless of how the process ends.
+   * If true, the deferred function is guaranteed to run when the process exits, even if it exits abruptly.
+   * This option is designed for critical cleanup operations.
    *
    * @remarks
-   * When using this option, it's strongly recommended to use only synchronous functions.
-   * Asynchronous functions may not complete execution if the process exits abruptly.
-   * Only the synchronous part of an async function (before the first `await`) is guaranteed to run.
+   * When using this option:
+   * - The deferred function will be executed during the 'exit' event of the process.
+   * - It's strongly recommended to use only synchronous operations or functions that resolve immediately.
+   * - Asynchronous operations may not complete if the process exits before they finish.
+   * - The deferred function should not rely on any external state that might have been cleaned up during the exit process.
    */
   alsoOnExit?: boolean
 }
@@ -41,6 +42,7 @@ export type DeferFunction = (fn: FunctionOrPromise<unknown>, options?: DeferOpti
  * @returns A Promise that resolves with the result of the provided function.
  * @throws {AggregateError} If any of the deferred functions without the noThrow option specified throw an error.
  *                          This error will also include any error thrown by the main function.
+ *
  * @example
  * const result = await provideDefer(async (defer) => {
  *   const resource = await acquireResource();
@@ -49,6 +51,10 @@ export type DeferFunction = (fn: FunctionOrPromise<unknown>, options?: DeferOpti
  *   // Use the resource...
  *   return someOperation(resource);
  * });
+ *
+ * @remarks
+ * - Deferred functions are executed in reverse order (LIFO) after the main function completes.
+ * - The `alsoOnExit` option should be used carefully, especially with asynchronous operations.
  */
 export const provideDefer = async <T>(fn: (defer: DeferFunction) => T | Promise<T>): Promise<T> => {
   type DeferredItem = {
