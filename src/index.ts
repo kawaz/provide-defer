@@ -33,7 +33,6 @@ export type DeferOptions = {
  */
 export type DeferFunction = (fn: FunctionOrPromise<unknown>, options?: DeferOptions) => void
 
-
 /**
  * Provides a mechanism for deferring the execution of functions or Promises, similar to Go's defer statement.
  *
